@@ -1054,11 +1054,17 @@ function App() {
               <div className="qr-wrapper">
                 <QRCode
                   value={`ton://transfer/${walletData.address}`}
-                  size={180}
+                  size={200}
                   bgColor="#1a1a2e"
                   fgColor="#ffffff"
-                  qrStyle="squares"
-                  ecLevel="M"
+                  qrStyle="dots"
+                  ecLevel="H"
+                  logoImage="/lotshot-icon.png"
+                  logoWidth={50}
+                  logoHeight={50}
+                  logoPadding={5}
+                  logoPaddingStyle="circle"
+                  removeQrCodeBehindLogo={true}
                 />
               </div>
             </div>
