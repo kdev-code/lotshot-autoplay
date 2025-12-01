@@ -666,10 +666,24 @@ function App() {
               seenTxHashesRef.current.add(txHash);
               addLog('success', `🎉 ${comment}: +${amount.toFixed(2)} TON @ ${timeStr}`);
 
-              // Show toast notification
-              toast.success(`🎉 ${comment}!`, {
-                description: `+${amount.toFixed(2)} TON`,
-                duration: 5000,
+              // Show toast notification with detailed info
+              const winLabel = comment === 'Jackpot'
+                ? '🎰 JACKPOT!'
+                : comment === 'x200'
+                  ? '💎 x200 WIN!'
+                  : comment === 'x77'
+                    ? '🔥 x77 WIN!'
+                    : comment === 'x20'
+                      ? '⭐ x20 WIN!'
+                      : comment === 'x7'
+                        ? '✨ x7 WIN!'
+                        : comment === 'x3'
+                          ? '🎯 x3 WIN!'
+                          : '🎲 x1 REFUND';
+
+              toast.success(winLabel, {
+                description: `+${amount.toFixed(2)} TON • ${timeStr}`,
+                duration: comment === 'Jackpot' ? 10000 : comment === 'x200' ? 8000 : 5000,
               });
 
               // Add to results immediately
