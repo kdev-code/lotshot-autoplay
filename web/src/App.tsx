@@ -1524,7 +1524,7 @@ function App() {
       )}
 
       {/* ============ TELEGRAM MINI APP UI ============ */}
-      {isTelegram && screen === 'wallet' && (
+      {isTelegram && screen === 'game' && (
         <>
           {/* Mini App Bottom Navigation */}
           <nav className="tma-nav">
