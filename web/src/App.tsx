@@ -119,6 +119,7 @@ const translations = {
     winsTab: 'Results',
     ticketsSold: 'Tickets sold',
     ticketsToJackpot: 'To Jackpot',
+    remainingTickets: 'Remaining',
     jackpotChance: 'Jackpot chance',
     prizesLeft: 'Prizes left',
     totalWins: 'Total Won',
@@ -249,6 +250,7 @@ const translations = {
     winsTab: 'Результаты',
     ticketsSold: 'Продано билетов',
     ticketsToJackpot: 'До джекпота',
+    remainingTickets: 'Осталось',
     jackpotChance: 'Шанс на джекпот',
     prizesLeft: 'Осталось призов',
     totalWins: 'Всего выиграно',
@@ -1342,6 +1344,10 @@ function App() {
                 <div className="stat error">
                   <span className="stat-value">{stats.failed}</span>
                   <span className="stat-label">{t.failed}</span>
+                </div>
+                <div className="stat remaining">
+                  <span className="stat-value">{Math.max(0, stats.total - stats.sent - stats.failed)}</span>
+                  <span className="stat-label">{t.remainingTickets}</span>
                 </div>
                 <div className="stat">
                   <span className="stat-value">~{(stats.sent * TICKET_PRICE).toFixed(1)}</span>

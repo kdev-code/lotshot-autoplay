@@ -618,14 +618,14 @@ body {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
   margin-bottom: 16px;
 }
 
 .stat {
   text-align: center;
-  padding: 14px;
+  padding: 12px 8px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
 }
@@ -638,8 +638,12 @@ body {
   color: #ff6b6b;
 }
 
+.stat.remaining .stat-value {
+  color: #ffd700;
+}
+
 .stat-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -938,7 +942,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
 .footer-btn {
@@ -950,6 +955,7 @@ body {
   padding: 8px 12px;
   border-radius: 8px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .footer-btn:hover {
@@ -963,6 +969,18 @@ body {
 
 .footer-divider {
   color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide dividers on wrap */
+@media (max-width: 400px) {
+  .footer-divider {
+    display: none;
+  }
+
+  .footer-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 }
 
 /* Modal */
@@ -1269,4 +1287,12 @@ body {
 /* Add padding to content when nav is shown */
 .telegram-app .wallet-screen {
   padding-bottom: 80px;
+}
+
+.telegram-app .game-screen {
+  padding-bottom: 80px;
+}
+
+.telegram-app .footer {
+  margin-bottom: 60px;
 }
