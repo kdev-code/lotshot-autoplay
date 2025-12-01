@@ -40,24 +40,23 @@ body {
 
 /* Header */
 .header {
-  text-align: center;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
   background: var(--tg-theme-secondary-bg-color);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: relative;
 }
 
 .header .logo {
-  height: 48px;
+  height: 36px;
 }
 
 /* Language Switcher */
 .lang-switcher {
-  position: absolute;
-  top: 16px;
-  right: 16px;
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .lang-switcher button {
@@ -687,6 +686,54 @@ body {
   font-size: 16px;
   cursor: pointer;
   margin-top: 24px;
+}
+
+/* Support Section */
+.support-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(0, 152, 234, 0.1);
+  border: 1px solid rgba(0, 152, 234, 0.2);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.support-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  margin-bottom: 6px;
+}
+
+.support-desc {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 16px;
+}
+
+.support-address {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.support-address .ton-icon {
+  font-size: 18px;
+}
+
+.support-address code {
+  font-size: 10px;
+  color: var(--tg-theme-text-color);
+  word-break: break-all;
+}
+
+.copy-support {
+  width: 100%;
 }
 
 /* Modal */

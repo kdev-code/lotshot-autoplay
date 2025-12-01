@@ -106,6 +106,8 @@ const translations = {
     language: 'Language',
     officialSite: 'Official Site',
     github: 'Source Code',
+    supportProject: 'Support Project',
+    supportDesc: 'If this project was useful',
     disconnect: 'Disconnect Wallet',
     about: 'About',
     faq: 'FAQ',
@@ -183,6 +185,8 @@ const translations = {
     language: 'Язык',
     officialSite: 'Официальный сайт',
     github: 'Исходный код',
+    supportProject: 'Поддержать проект',
+    supportDesc: 'Если проект был полезен',
     disconnect: 'Отключить кошелек',
     about: 'О проекте',
     faq: 'FAQ',
@@ -975,6 +979,24 @@ function App() {
                       <div className="desc">Open Source</div>
                     </div>
                   </a>
+                </div>
+
+                <div className="support-section">
+                  <div className="support-title">{t.supportProject}</div>
+                  <div className="support-desc">{t.supportDesc}</div>
+                  <div className="support-address">
+                    <span className="ton-icon">💎</span>
+                    <code>UQCwCYI_4tLe7JOBLz4571m-ehDihIoxILlR3l1Je5XltHyF</code>
+                  </div>
+                  <button
+                    className="btn secondary copy-support"
+                    onClick={() => {
+                      navigator.clipboard.writeText('UQCwCYI_4tLe7JOBLz4571m-ehDihIoxILlR3l1Je5XltHyF');
+                      haptic('success');
+                    }}
+                  >
+                    {t.copy}
+                  </button>
                 </div>
 
                 {walletData && (
