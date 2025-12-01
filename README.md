@@ -1,117 +1,218 @@
-# Lotshot TON Player
+# Lotshot Autoplay
 
-Скрипт для автоматической игры в лотерею Lotshot на TON.
+Automated lottery player for [Lotshot](https://ton.lotshot.io/) on TON blockchain.
 
-## Быстрый старт
+[Русская версия](README.ru.md)
 
-### 1. Установите Node.js
+## Features
 
-Скачайте и установите с https://nodejs.org (версия 18+)
+- **CLI Script** - Command-line interface for automated ticket purchasing
+- **Web Interface** - Browser-based wallet management and gameplay
+- **Real-time Stats** - Live lottery statistics and prize availability
+- **Multi-language** - English and Russian support
+- **Open Source** - Full transparency, verify the code yourself
 
-### 2. Установите зависимости
+## Installation Guide
 
-Откройте терминал в папке со скриптом:
+### Step 1: Install Node.js
+
+#### macOS
+
+**Option A: Official Installer**
+1. Go to [nodejs.org](https://nodejs.org/)
+2. Download the macOS installer (LTS version recommended)
+3. Open the downloaded `.pkg` file
+4. Follow the installation wizard
+
+**Option B: Using Homebrew**
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Node.js
+brew install node
+```
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+# Update package list
+sudo apt update
+
+# Install Node.js and npm
+sudo apt install nodejs npm
+
+# Or use NodeSource for latest version
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+#### Linux (Fedora/RHEL)
+
+```bash
+sudo dnf install nodejs npm
+```
+
+#### Linux (Arch)
+
+```bash
+sudo pacman -S nodejs npm
+```
+
+#### Windows
+
+**Option A: Official Installer**
+1. Go to [nodejs.org](https://nodejs.org/)
+2. Download the Windows installer (LTS version)
+3. Run the `.msi` file
+4. Follow the installation wizard
+5. Restart your terminal/PowerShell
+
+**Option B: Using winget**
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+**Option C: Using Chocolatey**
+```powershell
+choco install nodejs-lts
+```
+
+### Step 2: Verify Installation
+
+Open a terminal (or PowerShell on Windows) and run:
+
+```bash
+node --version
+npm --version
+```
+
+You should see version numbers (e.g., `v20.10.0` and `10.2.0`).
+
+### Step 3: Download the Project
+
+**Option A: Using Git**
+```bash
+git clone https://github.com/kdev-code/lotshot-autoplay.git
+cd lotshot-autoplay
+```
+
+**Option B: Download ZIP**
+1. Go to [github.com/kdev-code/lotshot-autoplay](https://github.com/kdev-code/lotshot-autoplay)
+2. Click the green "Code" button
+3. Select "Download ZIP"
+4. Extract the archive
+5. Open terminal in the extracted folder
+
+### Step 4: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Запустите скрипт
+## Usage
+
+### CLI Mode
 
 ```bash
 npm start
 ```
 
-### 4. Следуйте подсказкам
+Follow the prompts to:
+1. Enter your 24-word seed phrase
+2. Set your budget in TON
+3. Optionally add a referral address
+4. Confirm and start playing
 
-1. Введите seed-фразу кошелька (24 слова)
-2. Укажите сколько TON хотите потратить
-3. Опционально введите реферальный адрес
-4. Подтвердите и играйте!
+### Web Interface
 
-## Пример работы
-
-```
-╔══════════════════════════════════════════════════╗
-║       LOTSHOT TON - Automated Lottery Player     ║
-╚══════════════════════════════════════════════════╝
-
-Lottery: EQCHbnxDzu6b7U25pLV2V1cWwh1IxxtHPKmZky4Wpo-m-WuM
-Ticket price: 1 TON
-
-STEP 1: Enter your wallet seed phrase
-(24 words separated by spaces)
-
-Seed phrase: word1 word2 ... word24
-
-Connecting to wallet...
-
-✓ Wallet: EQA...
-✓ Balance: 105.5000 TON
-
-STEP 2: How much TON do you want to spend?
-Budget in TON: 100
-
-✓ Will buy: 100 tickets
-✓ Cost: 100 TON + ~5.00 TON gas
-
-STEP 3: Referral address (optional)
-Referral address (press Enter to skip):
-
-✓ No referral
-
-═══════════════════════════════════════════════════
-                    SUMMARY
-═══════════════════════════════════════════════════
-Wallet:       EQA...
-Tickets:      100
-Total cost:   ~105.00 TON
-═══════════════════════════════════════════════════
-
-Start playing? Type YES to confirm: YES
-
-🎰 Starting lottery...
-
-[1/100] Sending ticket... ✓ Sent!
-[2/100] Sending ticket... ✓ Sent!
-...
-
-═══════════════════════════════════════════════════
-                    RESULTS
-═══════════════════════════════════════════════════
-✓ Tickets sent:   100
-✗ Tickets failed: 0
-💰 TON spent:     ~100.00 TON (+ gas)
-💳 New balance:   15.2500 TON
-═══════════════════════════════════════════════════
-
-🎉 Done! Check your wallet for prizes!
+```bash
+cd web
+npm install
+npm run dev
 ```
 
-## Призы
+Open http://localhost:5173 in your browser.
 
-| Приз | Множитель | Шанс |
-|------|-----------|------|
-| Jackpot | x1000 | 0.008% |
-| Gold | x200 | 0.025% |
-| Platinum | x77 | 0.08% |
-| Silver | x20 | 0.4% |
-| Bronze | x7 | 1.25% |
-| Copper | x3 | 2.5% |
-| Base | x1 | 10% |
+## Prize Structure
 
-## Безопасность
+| Prize | Multiplier | Odds | Per Cycle |
+|-------|------------|------|-----------|
+| Jackpot | x1000 | 0.008% | 1 |
+| Gold | x200 | 0.025% | 3 |
+| Platinum | x77 | 0.08% | 10 |
+| Silver | x20 | 0.4% | 50 |
+| Bronze | x7 | 1.25% | 150 |
+| Copper | x3 | 2.5% | 300 |
+| Base | x1 | 10% | 1,200 |
 
-- Seed-фраза используется только локально
-- Скрипт подключается напрямую к TON Center API
-- Сначала протестируйте с небольшой суммой!
+> Each cycle consists of 12,000 tickets
 
-## Лицензия
+## Security
 
-Проект распространяется под лицензией **MIT**. Исходный код полностью открыт.
+- **Local Storage Only** - Seed phrases never leave your device
+- **Direct Blockchain Connection** - No intermediary servers via [Orbs Network](https://www.orbs.com/ton-access/)
+- **No Data Collection** - We don't track or store any user data
+- **Open Source** - Complete source code available for audit
+- **No Backend** - Everything runs client-side
 
-## Поддержать проект
+## Tech Stack
 
-Если проект оказался полезен, можете поддержать разработку:
+- **Runtime**: Node.js / TypeScript
+- **TON SDK**: [@ton/ton](https://github.com/ton-org/ton), [@ton/core](https://github.com/ton-org/ton-core)
+- **RPC**: [@orbs-network/ton-access](https://github.com/orbs-network/ton-access)
+- **Web**: React + Vite
+
+## Project Structure
+
+```
+lotshot-autoplay/
+├── src/
+│   └── index.ts          # CLI script
+├── web/
+│   └── src/
+│       ├── App.tsx       # Main web component
+│       └── App.css       # Styles
+├── lotshot-ton-contracts/ # Smart contract reference
+├── LICENSE               # MIT License
+├── README.md             # English documentation
+└── README.ru.md          # Russian documentation
+```
+
+## Troubleshooting
+
+### "command not found: npm"
+Node.js is not installed or not in PATH. Reinstall Node.js and restart your terminal.
+
+### "EACCES permission denied"
+On macOS/Linux, don't use `sudo npm`. Instead, fix npm permissions:
+```bash
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### "Module not found"
+Run `npm install` in the project directory.
+
+### Web interface won't start
+Make sure you're in the `web` folder and ran `npm install` there too.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+If you find this project useful:
 
 **TON:** `UQCwCYI_4tLe7JOBLz4571m-ehDihIoxILlR3l1Je5XltHyF`
+
+---
+
+**Disclaimer:** Gambling involves risk. Only play with funds you can afford to lose. This software is provided as-is without any guarantees.
