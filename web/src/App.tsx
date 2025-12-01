@@ -4,6 +4,7 @@ import { TonClient, WalletContractV4 } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { getHttpEndpoint } from '@orbs-network/ton-access';
 import { QRCode } from 'react-qrcode-logo';
+import { Toaster, toast } from 'sonner';
 import './App.css';
 
 // Telegram WebApp
@@ -667,6 +668,21 @@ function App() {
             if (isWin) {
               seenTxHashesRef.current.add(txHash);
               addLog('success', `🎉 ${comment}: +${amount.toFixed(2)} TON @ ${timeStr}`);
+
+              // Show toast notification
+              toast.success(`🎉 ${comment}!`, {
+                description: `+${amount.toFixed(2)} TON`,
+                duration: 5000,
+              });
+
+              // Add to results immediately
+              setWinResults(prev => [...prev, {
+                id: txHash,
+                amount,
+                isWin: true,
+                time: timeStr
+              }]);
+
               newWins.push({
                 id: txHash,
                 amount,
@@ -684,7 +700,7 @@ function App() {
 
         if (newWins.length > 0) {
           addLog('success', `🎉 ${lang === 'ru' ? 'Новых выигрышей' : 'New wins'}: ${newWins.length}`);
-          setWinResults(prev => [...prev, ...newWins]);
+          // Wins already added immediately above
         } else {
           addLog('pending', lang === 'ru' ? 'Новых выигрышей не найдено' : 'No new wins found');
         }
@@ -844,6 +860,17 @@ function App() {
 
   return (
     <div className={`app ${isTelegram ? 'telegram-app' : ''}`}>
+      <Toaster
+        position="top-center"
+        richColors
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: '#16213e',
+            border: '1px solid rgba(0, 212, 170, 0.3)',
+          },
+        }}
+      />
       {/* Language Switcher */}
       <div className="lang-switcher">
         <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
