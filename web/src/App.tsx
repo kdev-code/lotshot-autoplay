@@ -6,279 +6,217 @@ import { getHttpEndpoint } from '@orbs-network/ton-access';
 import { QRCode } from 'react-qrcode-logo';
 import './App.css';
 
+// Telegram WebApp
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        ready: () => void;
+        expand: () => void;
+        close: () => void;
+        MainButton: {
+          text: string;
+          show: () => void;
+          hide: () => void;
+          onClick: (fn: () => void) => void;
+        };
+        HapticFeedback: {
+          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+          selectionChanged: () => void;
+        };
+        themeParams: {
+          bg_color?: string;
+          text_color?: string;
+          hint_color?: string;
+          link_color?: string;
+          button_color?: string;
+          button_text_color?: string;
+          secondary_bg_color?: string;
+        };
+      };
+    };
+  }
+}
+
+const tg = window.Telegram?.WebApp;
+
 // ============ CONFIG ============
 const LOTTERY_ADDRESS = 'EQCHbnxDzu6b7U25pLV2V1cWwh1IxxtHPKmZky4Wpo-m-WuM';
 const TICKET_PRICE = 1;
-const DELAY_BETWEEN_TICKETS = 5000; // 5 seconds between tickets
+const DELAY_BETWEEN_TICKETS = 5000;
 const STORAGE_KEY = 'lotshot_wallet';
 const REFERRAL_KEY = 'lotshot_referral';
+const JACKPOT_CYCLE = 12000;
+
+const PRIZE_LIMITS = {
+  jackpot: 1, x200: 3, x77: 10, x20: 50, x7: 150, x3: 300, x1: 1200,
+};
 
 // ============ TRANSLATIONS ============
 const translations = {
   en: {
-    title: 'Lotshot TON',
-    subtitle: 'Automated Lottery Player',
-    lottery: 'Lottery',
+    // Navigation
+    home: 'Home',
+    play: 'Play',
+    results: 'Results',
+    settings: 'Settings',
+
+    // Home
     ticketPrice: 'Ticket Price',
     ton: 'TON',
+    ticketsSold: 'Sold',
+    toJackpot: 'To Jackpot',
+    prizesLeft: 'Prizes Left',
+    connectWallet: 'Connect Wallet',
+    createWallet: 'Create New',
+    importWallet: 'Import Existing',
 
-    // Wallet creation
-    createWallet: 'Create New Wallet',
-    importWallet: 'Import Existing Wallet',
-    generating: 'Generating...',
-    yourSeedPhrase: 'Your Seed Phrase',
-    writeItDown: '⚠️ Write down these 24 words and keep them safe!',
-    seedWarning: 'This is the ONLY way to recover your wallet. Never share it with anyone.',
-    copySeed: 'Copy Seed',
-    seedCopied: 'Seed Copied!',
-    iWroteItDown: 'I wrote it down',
-    verifySeed: 'Verify Seed Phrase',
-    enterWord: 'Enter word #',
-    verify: 'Verify',
-    wrongWord: 'Wrong word! Please check your seed phrase.',
-
-    // Import
-    enterSeed: 'Enter Seed Phrase',
-    seedPlaceholder: '24 words separated by spaces...',
-    import: 'Import',
-    back: '← Back',
-
-    // Wallet info
-    connecting: 'Connecting...',
-    connected: 'Connected',
+    // Wallet
     balance: 'Balance',
-    disconnect: 'Disconnect',
-    yourAddress: 'Your Address',
-    walletVersion: 'v4R2',
-    walletVersionInfo: 'To connect this address in your wallet app, import the seed phrase and select "v4R2" version in settings.',
-    copyAddress: 'Copy',
-    copied: 'Copied!',
-    depositHere: 'Send TON to this address to play',
     topUp: 'Top Up',
-    scanQR: 'Scan QR code to top up',
-    close: 'Close',
+    copy: 'Copy',
+    copied: 'Copied!',
+    yourAddress: 'Your Address',
+    depositHint: 'Send TON to play',
 
-    // Game
+    // Play
     budget: 'Budget (TON)',
-    budgetPlaceholder: 'How much TON to spend?',
+    budgetPlaceholder: 'Amount to spend',
     referral: 'Referral (optional)',
-    referralPlaceholder: 'Referral address...',
-    willBuy: 'Will buy',
-    tickets: 'tickets',
-    estimatedCost: 'Est. cost',
-    play: '🎰 PLAY',
-    stop: '⏹ STOP',
-    progress: 'Progress',
+    referralPlaceholder: 'Referral address',
+    willBuy: 'Tickets',
+    estCost: 'Est. Cost',
+    playBtn: '🎰 PLAY',
+    stopBtn: '⏹ STOP',
+
+    // Progress
     sent: 'Sent',
     failed: 'Failed',
     spent: 'Spent',
-    results: 'Results',
-    checkWallet: '🎉 Check your wallet for prizes!',
-    noWinsMessage: 'Better luck next time!',
-    gameFinished: 'Game finished',
 
-    error: 'Error',
-    invalidSeed: 'Invalid seed phrase (need 24 words)',
-    invalidBudget: 'Enter valid budget',
-    notEnoughBalance: 'Not enough balance!',
-    savedWallet: 'Wallet found',
-    useIt: 'Use saved wallet',
-    enterNew: 'Use different wallet',
-    securityNote: 'Your seed phrase is stored locally in your browser only.',
+    // Results
+    won: 'Won',
+    lost: 'Spent',
+    net: 'Net',
+    noResults: 'No results yet',
+    refreshWins: 'Refresh',
 
-    // Wins tab
-    logsTab: 'Game Logs',
-    winsTab: 'Results',
-    ticketsSold: 'Tickets sold',
-    ticketsToJackpot: 'To Jackpot',
-    jackpotChance: 'Jackpot chance',
-    prizesLeft: 'Prizes left',
-    totalWins: 'Total Won',
-    totalLoss: 'Total Lost',
-    netResult: 'Net Result',
-    noResults: 'No results yet. Play to see wins!',
-    win: 'WIN',
-    loss: 'LOSS',
-    checkingResults: 'Checking results...',
-    refreshWins: 'Refresh Wins',
-
-    // Footer
-    about: 'About',
-    aboutTitle: 'How it works',
-    aboutFeatures: [
-      'All transactions go directly to TON blockchain',
-      'Your seed phrase never leaves your device',
-      'No data is sent to external servers',
-      'Interacts directly with Lotshot smart contract',
-      'You can verify all transactions on-chain',
-    ],
-    aboutSecurity: 'Security',
-    aboutSecurityText: 'Your private keys are stored only in your browser\'s local storage. We never have access to your funds. All operations happen directly between your wallet and the blockchain.',
-    faq: 'FAQ',
-    faqItems: [
-      {
-        q: 'What is Lotshot?',
-        a: 'Lotshot is a decentralized lottery on TON blockchain. Each ticket costs 1 TON and you can win up to x1000 your bet.',
-      },
-      {
-        q: 'How do I win?',
-        a: 'Prizes are determined instantly by the smart contract. Winnings are sent automatically to your wallet.',
-      },
-      {
-        q: 'What are the odds?',
-        a: 'Jackpot x1000 (0.008%), Major x200 (0.025%), High x77 (0.08%), Mid x20 (0.4%), Low-Mid x7 (1.25%), Low x3 (2.5%), Mini x1 (10%).',
-      },
-      {
-        q: 'Is it safe?',
-        a: 'Yes. Your seed phrase stays on your device. All transactions happen directly on the blockchain. You can verify everything on-chain.',
-      },
-      {
-        q: 'Why use this app?',
-        a: 'Automate buying multiple tickets. Set your budget, and the app sends transactions one by one without manual work.',
-      },
-    ],
-    donate: 'Support Project',
-    donateText: 'If this project was useful, you can support development:',
-    donateAddress: 'UQCwCYI_4tLe7JOBLz4571m-ehDihIoxILlR3l1Je5XltHyF',
-    github: 'GitHub',
-    openSource: 'Open Source',
-    mitLicense: 'MIT License',
+    // Settings
+    language: 'Language',
     officialSite: 'Official Site',
-  },
-  ru: {
-    title: 'Lotshot TON',
-    subtitle: 'Автоматический игрок в лотерею',
-    lottery: 'Лотерея',
-    ticketPrice: 'Цена билета',
-    ton: 'TON',
+    github: 'Source Code',
+    disconnect: 'Disconnect Wallet',
+    about: 'About',
+    faq: 'FAQ',
 
-    // Wallet creation
-    createWallet: 'Создать новый кошелек',
-    importWallet: 'Импортировать кошелек',
-    generating: 'Генерация...',
-    yourSeedPhrase: 'Ваша Seed-фраза',
-    writeItDown: '⚠️ Запишите эти 24 слова и храните их в безопасности!',
-    seedWarning: 'Это ЕДИНСТВЕННЫЙ способ восстановить кошелек. Никому не показывайте!',
-    copySeed: 'Скопировать',
-    seedCopied: 'Скопировано!',
-    iWroteItDown: 'Я записал(а)',
-    verifySeed: 'Проверка Seed-фразы',
-    enterWord: 'Введите слово #',
-    verify: 'Проверить',
-    wrongWord: 'Неверное слово! Проверьте вашу seed-фразу.',
+    // Create wallet
+    generating: 'Generating...',
+    yourSeed: 'Your Seed Phrase',
+    writeDown: 'Write down these 24 words!',
+    seedWarning: 'Never share with anyone',
+    copySeed: 'Copy',
+    continue: 'I wrote it down',
+    back: '← Back',
+
+    // Verify
+    verifySeed: 'Verify Seed',
+    enterWord: 'Enter word #',
+    verify: 'Verify',
+    wrongWord: 'Wrong word!',
 
     // Import
-    enterSeed: 'Введите Seed-фразу',
-    seedPlaceholder: '24 слова через пробел...',
-    import: 'Импортировать',
-    back: '← Назад',
+    enterSeed: 'Enter Seed Phrase',
+    seedPlaceholder: '24 words...',
+    import: 'Import',
+    connecting: 'Connecting...',
+    securityNote: 'Stored locally only',
 
-    // Wallet info
-    connecting: 'Подключение...',
-    connected: 'Подключен',
+    // Errors
+    invalidSeed: 'Invalid seed (24 words needed)',
+    invalidBudget: 'Enter valid budget',
+    notEnough: 'Not enough balance',
+    invalidRef: 'Invalid referral address',
+    sameRef: 'Cannot use own address',
+  },
+  ru: {
+    home: 'Главная',
+    play: 'Играть',
+    results: 'Результаты',
+    settings: 'Настройки',
+
+    ticketPrice: 'Цена билета',
+    ton: 'TON',
+    ticketsSold: 'Продано',
+    toJackpot: 'До джекпота',
+    prizesLeft: 'Осталось призов',
+    connectWallet: 'Подключить кошелек',
+    createWallet: 'Создать новый',
+    importWallet: 'Импортировать',
+
     balance: 'Баланс',
-    disconnect: 'Отключить',
-    yourAddress: 'Ваш адрес',
-    walletVersion: 'v4R2',
-    walletVersionInfo: 'Чтобы подключить этот адрес в вашем кошельке, импортируйте seed-фразу и выберите версию "v4R2" в настройках.',
-    copyAddress: 'Копировать',
-    copied: 'Скопировано!',
-    depositHere: 'Отправьте TON на этот адрес для игры',
     topUp: 'Пополнить',
-    scanQR: 'Отсканируйте QR для пополнения',
-    close: 'Закрыть',
+    copy: 'Копировать',
+    copied: 'Скопировано!',
+    yourAddress: 'Ваш адрес',
+    depositHint: 'Отправьте TON для игры',
 
-    // Game
     budget: 'Бюджет (TON)',
-    budgetPlaceholder: 'Сколько TON потратить?',
+    budgetPlaceholder: 'Сколько потратить',
     referral: 'Реферал (опционально)',
-    referralPlaceholder: 'Адрес реферала...',
-    willBuy: 'Будет куплено',
-    tickets: 'билетов',
-    estimatedCost: 'Примерная стоимость',
-    play: '🎰 ИГРАТЬ',
-    stop: '⏹ СТОП',
-    progress: 'Прогресс',
+    referralPlaceholder: 'Адрес реферала',
+    willBuy: 'Билетов',
+    estCost: 'Примерно',
+    playBtn: '🎰 ИГРАТЬ',
+    stopBtn: '⏹ СТОП',
+
     sent: 'Отправлено',
     failed: 'Ошибок',
     spent: 'Потрачено',
-    results: 'Результаты',
-    checkWallet: '🎉 Проверьте кошелек на призы!',
-    noWinsMessage: 'Повезёт в следующий раз!',
-    gameFinished: 'Игра завершена',
 
-    error: 'Ошибка',
-    invalidSeed: 'Неверная seed-фраза (нужно 24 слова)',
-    invalidBudget: 'Введите корректный бюджет',
-    notEnoughBalance: 'Недостаточно баланса!',
-    savedWallet: 'Найден кошелек',
-    useIt: 'Использовать сохраненный',
-    enterNew: 'Другой кошелек',
-    securityNote: 'Seed-фраза хранится только локально в вашем браузере.',
+    won: 'Выиграно',
+    lost: 'Потрачено',
+    net: 'Итого',
+    noResults: 'Пока нет результатов',
+    refreshWins: 'Обновить',
 
-    // Wins tab
-    logsTab: 'Логи игры',
-    winsTab: 'Результаты',
-    ticketsSold: 'Продано билетов',
-    ticketsToJackpot: 'До джекпота',
-    jackpotChance: 'Шанс на джекпот',
-    prizesLeft: 'Осталось призов',
-    totalWins: 'Всего выиграно',
-    totalLoss: 'Всего потрачено',
-    netResult: 'Итого',
-    noResults: 'Пока нет результатов. Играйте!',
-    win: 'ВЫИГРЫШ',
-    loss: 'ПРОИГРЫШ',
-    checkingResults: 'Проверка результатов...',
-    refreshWins: 'Обновить выигрыши',
-
-    // Footer
-    about: 'О проекте',
-    aboutTitle: 'Как это работает',
-    aboutFeatures: [
-      'Все транзакции идут напрямую в блокчейн TON',
-      'Ваша seed-фраза никогда не покидает устройство',
-      'Данные не передаются на внешние серверы',
-      'Прямое взаимодействие со смарт-контрактом Lotshot',
-      'Вы можете проверить все транзакции в блокчейне',
-    ],
-    aboutSecurity: 'Безопасность',
-    aboutSecurityText: 'Ваши приватные ключи хранятся только в локальном хранилище браузера. Мы никогда не имеем доступа к вашим средствам. Все операции происходят напрямую между вашим кошельком и блокчейном.',
-    faq: 'FAQ',
-    faqItems: [
-      {
-        q: 'Что такое Lotshot?',
-        a: 'Lotshot — это децентрализованная лотерея в блокчейне TON. Каждый билет стоит 1 TON, и вы можете выиграть до x1000 от ставки.',
-      },
-      {
-        q: 'Как выиграть?',
-        a: 'Призы определяются мгновенно смарт-контрактом. Выигрыши автоматически отправляются на ваш кошелёк.',
-      },
-      {
-        q: 'Какие шансы на выигрыш?',
-        a: 'Jackpot x1000 (0.008%), Major x200 (0.025%), High x77 (0.08%), Mid x20 (0.4%), Low-Mid x7 (1.25%), Low x3 (2.5%), Mini x1 (10%).',
-      },
-      {
-        q: 'Это безопасно?',
-        a: 'Да. Ваша seed-фраза остаётся на вашем устройстве. Все транзакции происходят напрямую в блокчейне. Вы можете проверить всё on-chain.',
-      },
-      {
-        q: 'Зачем использовать это приложение?',
-        a: 'Автоматизация покупки множества билетов. Установите бюджет, и приложение само отправит транзакции одну за другой.',
-      },
-    ],
-    donate: 'Поддержать проект',
-    donateText: 'Если проект оказался полезен, можете поддержать разработку:',
-    donateAddress: 'UQCwCYI_4tLe7JOBLz4571m-ehDihIoxILlR3l1Je5XltHyF',
-    github: 'GitHub',
-    openSource: 'Открытый код',
-    mitLicense: 'Лицензия MIT',
+    language: 'Язык',
     officialSite: 'Официальный сайт',
+    github: 'Исходный код',
+    disconnect: 'Отключить кошелек',
+    about: 'О проекте',
+    faq: 'FAQ',
+
+    generating: 'Генерация...',
+    yourSeed: 'Ваша Seed-фраза',
+    writeDown: 'Запишите эти 24 слова!',
+    seedWarning: 'Никому не показывайте',
+    copySeed: 'Копировать',
+    continue: 'Я записал(а)',
+    back: '← Назад',
+
+    verifySeed: 'Проверка Seed',
+    enterWord: 'Введите слово #',
+    verify: 'Проверить',
+    wrongWord: 'Неверное слово!',
+
+    enterSeed: 'Введите Seed-фразу',
+    seedPlaceholder: '24 слова...',
+    import: 'Импортировать',
+    connecting: 'Подключение...',
+    securityNote: 'Хранится только локально',
+
+    invalidSeed: 'Неверная seed-фраза (24 слова)',
+    invalidBudget: 'Введите корректный бюджет',
+    notEnough: 'Недостаточно баланса',
+    invalidRef: 'Неверный адрес реферала',
+    sameRef: 'Нельзя указать свой адрес',
   },
 };
 
 type Lang = 'en' | 'ru';
-type Screen = 'welcome' | 'create' | 'verify' | 'import' | 'saved' | 'game';
+type Tab = 'home' | 'play' | 'results' | 'settings';
+type Screen = 'main' | 'create' | 'verify' | 'import';
 type GameLog = { id: number; status: 'success' | 'error' | 'pending'; message: string };
 type WinResult = { id: number; amount: number; isWin: boolean; time: string };
 
@@ -289,7 +227,8 @@ function App() {
   });
   const t = translations[lang];
 
-  const [screen, setScreen] = useState<Screen>('welcome');
+  const [tab, setTab] = useState<Tab>('home');
+  const [screen, setScreen] = useState<Screen>('main');
   const [newMnemonic, setNewMnemonic] = useState<string[]>([]);
   const [verifyWordIndex, setVerifyWordIndex] = useState(0);
   const [verifyInput, setVerifyInput] = useState('');
@@ -307,233 +246,75 @@ function App() {
   } | null>(null);
 
   const [budget, setBudget] = useState('');
-  const [referral, setReferral] = useState(() => {
-    return localStorage.getItem(REFERRAL_KEY) || '';
-  });
+  const [referral, setReferral] = useState(() => localStorage.getItem(REFERRAL_KEY) || '');
   const [isPlaying, setIsPlaying] = useState(false);
   const shouldStopRef = useRef(false);
   const [logs, setLogs] = useState<GameLog[]>([]);
   const [stats, setStats] = useState({ sent: 0, failed: 0, total: 0 });
-  const [isDone, setIsDone] = useState(false);
-  const [activeTab, setActiveTab] = useState<'logs' | 'wins'>('logs');
   const [winResults, setWinResults] = useState<WinResult[]>([]);
-  const [seedCopied, setSeedCopied] = useState(false);
-  const [donateCopied, setDonateCopied] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const [showFaq, setShowFaq] = useState(false);
-  const [showDonate, setShowDonate] = useState(false);
-  const [showVersionInfo, setShowVersionInfo] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<number>(0);
+  const seenTxHashesRef = useRef<Set<string>>(new Set());
+
   const [lotteryStats, setLotteryStats] = useState<{
     ticketsSold: number;
     ticketsToJackpot: number;
-    prizes: {
-      jackpot: number;
-      x200: number;
-      x77: number;
-      x20: number;
-      x7: number;
-      x3: number;
-      x1: number;
-    };
+    prizes: typeof PRIZE_LIMITS;
   } | null>(null);
 
-  // Check for saved wallet on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setScreen('saved');
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('lotshot_lang', lang);
-  }, [lang]);
-
-  const addLog = useCallback((status: 'success' | 'error' | 'pending', message: string) => {
-    setLogs(prev => [...prev.slice(-100), { id: Date.now() + Math.random(), status, message }]);
-  }, []);
-
-  // Generate new wallet
-  const generateWallet = async () => {
-    setIsLoading(true);
-    try {
-      const mnemonic = await mnemonicNew(24);
-      setNewMnemonic(mnemonic);
-      setScreen('create');
-    } catch (e: any) {
-      alert(t.error + ': ' + e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Random word indices for verification (3 random words)
-  const getVerifyIndices = () => {
+  const [verifyIndices] = useState(() => {
     const indices: number[] = [];
     while (indices.length < 3) {
       const idx = Math.floor(Math.random() * 24);
       if (!indices.includes(idx)) indices.push(idx);
     }
     return indices.sort((a, b) => a - b);
-  };
+  });
 
-  const [verifyIndices] = useState(() => getVerifyIndices());
+  // Init Telegram WebApp
+  useEffect(() => {
+    if (tg) {
+      tg.ready();
+      tg.expand();
 
-  // Start verification
-  const startVerification = () => {
-    setVerifyWordIndex(0);
-    setVerifyInput('');
-    setScreen('verify');
-  };
-
-  // Check verification word
-  const checkVerifyWord = () => {
-    const correctWord = newMnemonic[verifyIndices[verifyWordIndex]];
-    if (verifyInput.trim().toLowerCase() === correctWord.toLowerCase()) {
-      if (verifyWordIndex < 2) {
-        setVerifyWordIndex(verifyWordIndex + 1);
-        setVerifyInput('');
-      } else {
-        // All verified, connect wallet
-        connectWallet(newMnemonic.join(' '));
+      // Apply theme
+      const theme = tg.themeParams;
+      if (theme) {
+        const root = document.documentElement;
+        if (theme.bg_color) root.style.setProperty('--tg-theme-bg-color', theme.bg_color);
+        if (theme.text_color) root.style.setProperty('--tg-theme-text-color', theme.text_color);
+        if (theme.hint_color) root.style.setProperty('--tg-theme-hint-color', theme.hint_color);
+        if (theme.link_color) root.style.setProperty('--tg-theme-link-color', theme.link_color);
+        if (theme.button_color) root.style.setProperty('--tg-theme-button-color', theme.button_color);
+        if (theme.button_text_color) root.style.setProperty('--tg-theme-button-text-color', theme.button_text_color);
+        if (theme.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', theme.secondary_bg_color);
       }
-    } else {
-      alert(t.wrongWord);
     }
-  };
+  }, []);
 
-  // Connect wallet
-  const connectWallet = async (seed: string) => {
-    const words = seed.trim().split(/\s+/).filter(w => w.length > 0);
-    if (words.length !== 24) {
-      alert(t.invalidSeed);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Using Orbs TON Access - free public RPC without rate limits
-      const endpoint = await getHttpEndpoint({ network: 'mainnet' });
-      const client = new TonClient({ endpoint });
-
-      const keyPair = await mnemonicToPrivateKey(words);
-      const wallet = WalletContractV4.create({
-        publicKey: keyPair.publicKey,
-        workchain: 0,
-      });
-
-      const contract = client.open(wallet);
-
-      let balance = BigInt(0);
-      try {
-        balance = await contract.getBalance();
-      } catch {
-        // New wallet, no balance yet
-      }
-
-      // Save to localStorage
-      localStorage.setItem(STORAGE_KEY, seed.trim());
-
-      setWalletData({
-        address: wallet.address.toString(),
-        balance: (Number(balance) / 1e9).toFixed(4),
-        contract,
-        keyPair,
-        client,
-      });
-      setScreen('game');
-    } catch (e: any) {
-      alert(t.error + ': ' + e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadSavedWallet = async () => {
+  // Check saved wallet
+  useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      await connectWallet(saved);
-    }
-  };
+    if (saved) loadSavedWallet();
+  }, []);
 
-  const disconnectWallet = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setWalletData(null);
-    setScreen('welcome');
-    setLogs([]);
-    setIsDone(false);
-  };
+  useEffect(() => {
+    localStorage.setItem('lotshot_lang', lang);
+  }, [lang]);
 
-  const refreshBalance = async () => {
-    if (!walletData) return;
-    try {
-      const balance = await walletData.contract.getBalance();
-      setWalletData(prev => prev ? {
-        ...prev,
-        balance: (Number(balance) / 1e9).toFixed(4),
-      } : null);
-    } catch {}
-  };
-
-  const copyAddress = () => {
-    if (walletData) {
-      navigator.clipboard.writeText(walletData.address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const copySeedPhrase = () => {
-    if (newMnemonic.length > 0) {
-      navigator.clipboard.writeText(newMnemonic.join(' '));
-      setSeedCopied(true);
-      setTimeout(() => setSeedCopied(false), 2000);
-    }
-  };
-
-  const copyDonateAddress = () => {
-    navigator.clipboard.writeText(t.donateAddress);
-    setDonateCopied(true);
-    setTimeout(() => setDonateCopied(false), 2000);
-  };
-
-  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-
-  const JACKPOT_CYCLE = 12000; // Total tickets in one jackpot cycle
-
-  // Prize limits per cycle
-  const PRIZE_LIMITS = {
-    jackpot: 1,
-    x200: 3,
-    x77: 10,
-    x20: 50,
-    x7: 150,
-    x3: 300,
-    x1: 1200,
-  };
-
-  // Fetch lottery contract stats using TonClient
+  // Fetch lottery stats
   const fetchLotteryStats = async () => {
     try {
       const endpoint = await getHttpEndpoint({ network: 'mainnet' });
       const client = new TonClient({ endpoint });
       const lotteryAddr = Address.parse(LOTTERY_ADDRESS);
 
-      // Call get_full_data
       const fullDataResult = await client.runMethod(lotteryAddr, 'get_full_data');
-
-      // Call get_counters
       const countersResult = await client.runMethod(lotteryAddr, 'get_counters');
 
-      // Parse get_full_data: skip first (cell), get second (int = next_ticket_index)
-      fullDataResult.stack.pop(); // counters_ref (cell)
+      fullDataResult.stack.pop();
       const nextTicketIndex = Number(fullDataResult.stack.readBigNumber());
-
       const ticketsInCycle = nextTicketIndex % JACKPOT_CYCLE;
-      const ticketsToJackpot = JACKPOT_CYCLE - ticketsInCycle;
 
-      // Parse get_counters: jp, x200, x77, x20, x7, x3, x1
       const jpWon = Number(countersResult.stack.readBigNumber());
       const x200Won = Number(countersResult.stack.readBigNumber());
       const x77Won = Number(countersResult.stack.readBigNumber());
@@ -544,7 +325,7 @@ function App() {
 
       setLotteryStats({
         ticketsSold: nextTicketIndex,
-        ticketsToJackpot: ticketsToJackpot,
+        ticketsToJackpot: JACKPOT_CYCLE - ticketsInCycle,
         prizes: {
           jackpot: PRIZE_LIMITS.jackpot - jpWon,
           x200: PRIZE_LIMITS.x200 - x200Won,
@@ -556,100 +337,182 @@ function App() {
         }
       });
     } catch (e) {
-      console.error('Failed to fetch lottery stats:', e);
+      console.error('Failed to fetch stats:', e);
     }
   };
 
-  // Fetch lottery stats on mount and periodically
   useEffect(() => {
     fetchLotteryStats();
-    const interval = setInterval(fetchLotteryStats, 30000); // Every 30 seconds
+    const interval = setInterval(fetchLotteryStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Track seen transaction hashes to avoid duplicates
-  const seenTxHashesRef = useRef<Set<string>>(new Set());
+  const haptic = (type: 'light' | 'medium' | 'success' | 'error') => {
+    if (tg?.HapticFeedback) {
+      if (type === 'success' || type === 'error') {
+        tg.HapticFeedback.notificationOccurred(type);
+      } else {
+        tg.HapticFeedback.impactOccurred(type);
+      }
+    }
+  };
 
-  // Check for wins by looking at incoming transactions from lottery
-  const checkForWins = async (startTime?: number, resetSeen?: boolean) => {
-    if (!walletData) return;
+  const addLog = useCallback((status: 'success' | 'error' | 'pending', message: string) => {
+    setLogs(prev => [...prev.slice(-50), { id: Date.now() + Math.random(), status, message }]);
+  }, []);
 
-    // Reset seen hashes when starting a new game
-    if (resetSeen) {
-      seenTxHashesRef.current.clear();
+  // Wallet functions
+  const generateWallet = async () => {
+    setIsLoading(true);
+    haptic('light');
+    try {
+      const mnemonic = await mnemonicNew(24);
+      setNewMnemonic(mnemonic);
+      setScreen('create');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const connectWallet = async (seed: string) => {
+    const words = seed.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length !== 24) {
+      alert(t.invalidSeed);
+      return;
     }
 
-    const filterTime = startTime || gameStartTime;
+    setIsLoading(true);
+    try {
+      const endpoint = await getHttpEndpoint({ network: 'mainnet' });
+      const client = new TonClient({ endpoint });
+      const keyPair = await mnemonicToPrivateKey(words);
+      const wallet = WalletContractV4.create({ publicKey: keyPair.publicKey, workchain: 0 });
+      const contract = client.open(wallet);
 
-    // Valid win comments from the smart contract
+      let balance = BigInt(0);
+      try { balance = await contract.getBalance(); } catch {}
+
+      localStorage.setItem(STORAGE_KEY, seed.trim());
+      setWalletData({
+        address: wallet.address.toString(),
+        balance: (Number(balance) / 1e9).toFixed(4),
+        contract,
+        keyPair,
+        client,
+      });
+      setScreen('main');
+      setTab('play');
+      haptic('success');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadSavedWallet = async () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) await connectWallet(saved);
+  };
+
+  const disconnectWallet = () => {
+    haptic('medium');
+    localStorage.removeItem(STORAGE_KEY);
+    setWalletData(null);
+    setTab('home');
+    setLogs([]);
+    setWinResults([]);
+  };
+
+  const refreshBalance = async () => {
+    if (!walletData) return;
+    try {
+      const balance = await walletData.contract.getBalance();
+      setWalletData(prev => prev ? { ...prev, balance: (Number(balance) / 1e9).toFixed(4) } : null);
+    } catch {}
+  };
+
+  const copyAddress = () => {
+    if (walletData) {
+      navigator.clipboard.writeText(walletData.address);
+      setCopied(true);
+      haptic('light');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const startVerification = () => {
+    setVerifyWordIndex(0);
+    setVerifyInput('');
+    setScreen('verify');
+  };
+
+  const checkVerifyWord = () => {
+    const correctWord = newMnemonic[verifyIndices[verifyWordIndex]];
+    if (verifyInput.trim().toLowerCase() === correctWord.toLowerCase()) {
+      if (verifyWordIndex < 2) {
+        setVerifyWordIndex(verifyWordIndex + 1);
+        setVerifyInput('');
+        haptic('light');
+      } else {
+        connectWallet(newMnemonic.join(' '));
+      }
+    } else {
+      haptic('error');
+      alert(t.wrongWord);
+    }
+  };
+
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  const checkForWins = async (startTime?: number, resetSeen?: boolean) => {
+    if (!walletData) return;
+    if (resetSeen) seenTxHashesRef.current.clear();
+
+    const filterTime = startTime || gameStartTime;
     const WIN_COMMENTS = ['Jackpot', 'x200', 'x77', 'x20', 'x7', 'x3', 'x1'];
 
     try {
-      addLog('pending', t.checkingResults);
-
-      // Get transactions from toncenter API
-      const response = await fetch(
-        `https://toncenter.com/api/v2/getTransactions?address=${walletData.address}&limit=50`
-      );
+      const response = await fetch(`https://toncenter.com/api/v2/getTransactions?address=${walletData.address}&limit=50`);
       const data = await response.json();
 
       if (data.ok && data.result) {
         const lotteryAddr = Address.parse(LOTTERY_ADDRESS).toString();
         const newWins: WinResult[] = [];
-        let tryAgainCount = 0;
 
         for (const tx of data.result) {
-          // Only check transactions after game start time
           const txTimestamp = tx.utime * 1000;
           if (filterTime && txTimestamp < filterTime) continue;
 
           const txHash = tx.transaction_id?.hash || `${tx.utime}-${tx.in_msg?.value}`;
-
-          // Skip already seen transactions
           if (seenTxHashesRef.current.has(txHash)) continue;
 
-          // Check if transaction is incoming from lottery
           if (tx.in_msg && tx.in_msg.source === lotteryAddr) {
             const amount = Number(tx.in_msg.value || 0) / 1e9;
             const comment = tx.in_msg.message || '';
             const txTime = new Date(txTimestamp);
-            const timeStr = `${txTime.getHours().toString().padStart(2, '0')}:${txTime.getMinutes().toString().padStart(2, '0')}:${txTime.getSeconds().toString().padStart(2, '0')}`;
+            const timeStr = `${txTime.getHours().toString().padStart(2, '0')}:${txTime.getMinutes().toString().padStart(2, '0')}`;
 
-            // Only count as win if comment is one of the valid win types
             const isWin = WIN_COMMENTS.includes(comment) && amount > 0;
 
             if (isWin) {
               seenTxHashesRef.current.add(txHash);
-              addLog('success', `🎉 ${comment}: +${amount.toFixed(2)} TON @ ${timeStr}`);
-              newWins.push({
-                id: txHash,
-                amount,
-                isWin: true,
-                time: timeStr
-              });
+              newWins.push({ id: txHash, amount, isWin: true, time: timeStr });
+              haptic('success');
             } else if (comment === 'Try Again') {
               seenTxHashesRef.current.add(txHash);
-              tryAgainCount++;
-              addLog('pending', `❌ Try Again @ ${timeStr}`);
             }
-            // Ignore bounce transactions (they have weird comments or no valid comment)
           }
         }
 
         if (newWins.length > 0) {
-          addLog('success', `🎉 ${lang === 'ru' ? 'Новых выигрышей' : 'New wins'}: ${newWins.length}`);
           setWinResults(prev => [...prev, ...newWins]);
-        } else {
-          addLog('pending', lang === 'ru' ? 'Новых выигрышей не найдено' : 'No new wins found');
-        }
-
-        if (tryAgainCount > 0) {
-          addLog('pending', `${lang === 'ru' ? 'Проигрышей' : 'Losses'}: ${tryAgainCount}`);
         }
       }
     } catch (e) {
       console.error('Failed to check wins:', e);
-      addLog('error', 'Failed to check results');
     }
   };
 
@@ -666,24 +529,19 @@ function App() {
     const neededBalance = totalTickets * TICKET_PRICE + totalTickets * 0.05;
 
     if (parseFloat(walletData.balance) < neededBalance) {
-      alert(t.notEnoughBalance);
+      alert(t.notEnough);
       return;
     }
 
-    // Check referral is not same as wallet
     if (referral.trim()) {
       try {
         const refAddr = Address.parse(referral.trim());
         if (refAddr.equals(Address.parse(walletData.address))) {
-          alert(lang === 'ru'
-            ? 'Реферальный адрес не может совпадать с вашим кошельком!'
-            : 'Referral address cannot be the same as your wallet!');
+          alert(t.sameRef);
           return;
         }
       } catch {
-        alert(lang === 'ru'
-          ? 'Неверный реферальный адрес!'
-          : 'Invalid referral address!');
+        alert(t.invalidRef);
         return;
       }
     }
@@ -692,11 +550,11 @@ function App() {
     setGameStartTime(startTime);
     setStats({ sent: 0, failed: 0, total: totalTickets });
     setIsPlaying(true);
-    setIsDone(false);
     shouldStopRef.current = false;
     setLogs([]);
     setWinResults([]);
     seenTxHashesRef.current.clear();
+    haptic('medium');
 
     let sent = 0;
     let failed = 0;
@@ -714,70 +572,48 @@ function App() {
 
     for (let i = 1; i <= totalTickets; i++) {
       if (shouldStopRef.current) {
-        addLog('error', `Stopped at ticket ${i}`);
+        addLog('error', `Stopped at ${i}`);
         break;
       }
 
-      // Retry up to 3 times
       let success = false;
       for (let attempt = 1; attempt <= 3 && !success && !shouldStopRef.current; attempt++) {
-        addLog('pending', `[${i}/${totalTickets}] ${attempt > 1 ? `Attempt ${attempt}...` : 'Sending...'}`);
+        addLog('pending', `[${i}/${totalTickets}] ${attempt > 1 ? `Retry ${attempt}` : 'Sending...'}`);
 
         try {
           let body = beginCell();
           if (referral.trim()) {
-            try {
-              body.storeAddress(Address.parse(referral.trim()));
-            } catch {}
+            try { body.storeAddress(Address.parse(referral.trim())); } catch {}
           }
 
           await walletData.contract.sendTransfer({
             secretKey: walletData.keyPair.secretKey,
             seqno: seqno,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            messages: [
-              internal({
-                to: lotteryAddr,
-                value: toNano(TICKET_PRICE),
-                body: body.endCell(),
-              }),
-            ],
+            messages: [internal({ to: lotteryAddr, value: toNano(TICKET_PRICE), body: body.endCell() })],
           });
 
           seqno++;
           sent++;
           success = true;
           setStats({ sent, failed, total: totalTickets });
-          addLog('success', `[${i}/${totalTickets}] ✓ Sent!`);
+          addLog('success', `[${i}/${totalTickets}] ✓`);
 
-          // Record as loss initially (wins will be detected later)
           const now = new Date();
-          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-          setWinResults(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            amount: TICKET_PRICE,
-            isWin: false,
-            time: timeStr
-          }]);
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          setWinResults(prev => [...prev, { id: Date.now() + Math.random(), amount: TICKET_PRICE, isWin: false, time: timeStr }]);
 
         } catch (e: any) {
-          console.error('Transaction error:', e);
-
           if (attempt === 3) {
             failed++;
             setStats({ sent, failed, total: totalTickets });
-            addLog('error', `[${i}/${totalTickets}] ✗ ${e.message?.slice(0, 50) || 'Error'}`);
+            addLog('error', `[${i}/${totalTickets}] ✗`);
           }
-
-          // Wait before retry
           await sleep(3000);
-          try {
-            seqno = await walletData.contract.getSeqno();
-          } catch {}
+          try { seqno = await walletData.contract.getSeqno(); } catch {}
         }
       }
 
-      // Wait between tickets
       if (i < totalTickets && !shouldStopRef.current) {
         await sleep(DELAY_BETWEEN_TICKETS);
       }
@@ -785,9 +621,8 @@ function App() {
 
     await refreshBalance();
     setIsPlaying(false);
-    setIsDone(true);
+    haptic('success');
 
-    // Wait a bit for blockchain to process, then check for wins
     await sleep(5000);
     await checkForWins(startTime, true);
   };
@@ -796,683 +631,415 @@ function App() {
   const totalTickets = Math.floor(budgetNum / TICKET_PRICE);
   const estimatedCost = totalTickets * TICKET_PRICE + totalTickets * 0.05;
 
+  const totalWon = winResults.filter(r => r.isWin).reduce((sum, r) => sum + r.amount, 0);
+  const totalSpent = stats.sent * TICKET_PRICE;
+  const netResult = totalWon - totalSpent;
+
+  // ============ RENDER ============
   return (
     <div className="app">
-      {/* Language Switcher */}
-      <div className="lang-switcher">
-        <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-        <button className={lang === 'ru' ? 'active' : ''} onClick={() => setLang('ru')}>RU</button>
-      </div>
-
       {/* Header */}
       <div className="header">
-        <a href="https://ton.lotshot.io/" target="_blank" rel="noopener noreferrer">
-          <img
-            src="https://ton.lotshot.io/static/media/Lotshot.3ce510c1d68b5b2a71f3e381ffec0f34.svg"
-            alt="Lotshot"
-            className="logo"
-          />
-        </a>
-        <p className="subtitle">{t.subtitle}</p>
+        <div className="lang-switcher">
+          <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+          <button className={lang === 'ru' ? 'active' : ''} onClick={() => setLang('ru')}>RU</button>
+        </div>
+        <img src="https://ton.lotshot.io/static/media/Lotshot.3ce510c1d68b5b2a71f3e381ffec0f34.svg" alt="Lotshot" className="logo" />
       </div>
 
-      {/* Welcome Screen */}
-      {screen === 'welcome' && (
-        <div className="welcome-screen">
-          <div className="lottery-info">
-            <div className="info-item">
-              <span className="label">{t.lottery}:</span>
-              <a href={`https://tonviewer.com/${LOTTERY_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="lottery-link">
-                <code>{LOTTERY_ADDRESS}</code>
-              </a>
-            </div>
-            <div className="info-item">
-              <span className="label">{t.ticketPrice}:</span>
-              <strong>{TICKET_PRICE} {t.ton}</strong>
-            </div>
-            {lotteryStats && (
-              <>
-                <div className="info-item">
-                  <span className="label">{t.ticketsSold}:</span>
-                  <strong>{lotteryStats.ticketsSold.toLocaleString()}</strong>
-                </div>
-                <div className="info-item jackpot-item">
-                  <span className="label">{t.ticketsToJackpot}:</span>
-                  <strong className="jackpot-value">{lotteryStats.ticketsToJackpot.toLocaleString()}</strong>
-                </div>
-                <div className="prizes-grid">
-                  <div className="prize-label">{t.prizesLeft}:</div>
-                  <div className="prize-item jackpot">
-                    <span className="prize-name">Jackpot</span>
-                    <span className="prize-count">{lotteryStats.prizes.jackpot}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x200</span>
-                    <span className="prize-count">{lotteryStats.prizes.x200}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x77</span>
-                    <span className="prize-count">{lotteryStats.prizes.x77}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x20</span>
-                    <span className="prize-count">{lotteryStats.prizes.x20}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x7</span>
-                    <span className="prize-count">{lotteryStats.prizes.x7}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x3</span>
-                    <span className="prize-count">{lotteryStats.prizes.x3}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x1</span>
-                    <span className="prize-count">{lotteryStats.prizes.x1}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Create Screen */}
+        {screen === 'create' && (
+          <>
+            <h3 className="page-title">{t.yourSeed}</h3>
+            <p className="warning">{t.writeDown}</p>
 
-          <div className="welcome-buttons">
-            <button className="btn primary large" onClick={generateWallet} disabled={isLoading}>
-              {isLoading ? t.generating : t.createWallet}
-            </button>
-            <button className="btn secondary large" onClick={() => setScreen('import')}>
-              {t.importWallet}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Saved Wallet Screen */}
-      {screen === 'saved' && (
-        <div className="saved-screen">
-          {/* Lottery Stats */}
-          {lotteryStats && (
-            <div className="lottery-info">
-              <div className="info-item">
-                <span className="label">{t.ticketsSold}:</span>
-                <strong>{lotteryStats.ticketsSold.toLocaleString()}</strong>
-              </div>
-              <div className="info-item jackpot-item">
-                <span className="label">{t.ticketsToJackpot}:</span>
-                <strong className="jackpot-value">{lotteryStats.ticketsToJackpot.toLocaleString()}</strong>
-              </div>
-              <div className="prizes-grid">
-                <div className="prize-label">{t.prizesLeft}:</div>
-                <div className="prize-item jackpot">
-                  <span className="prize-name">Jackpot</span>
-                  <span className="prize-count">{lotteryStats.prizes.jackpot}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x200</span>
-                  <span className="prize-count">{lotteryStats.prizes.x200}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x77</span>
-                  <span className="prize-count">{lotteryStats.prizes.x77}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x20</span>
-                  <span className="prize-count">{lotteryStats.prizes.x20}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x7</span>
-                  <span className="prize-count">{lotteryStats.prizes.x7}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x3</span>
-                  <span className="prize-count">{lotteryStats.prizes.x3}</span>
-                </div>
-                <div className="prize-item">
-                  <span className="prize-name">x1</span>
-                  <span className="prize-count">{lotteryStats.prizes.x1}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <p>💾 {t.savedWallet}</p>
-          <div className="saved-buttons">
-            <button className="btn primary" onClick={loadSavedWallet} disabled={isLoading}>
-              {isLoading ? t.connecting : t.useIt}
-            </button>
-            <button className="btn secondary" onClick={() => {
-              localStorage.removeItem(STORAGE_KEY);
-              setScreen('welcome');
-            }}>
-              {t.enterNew}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Create Wallet - Show Seed */}
-      {screen === 'create' && (
-        <div className="create-screen">
-          <h2>{t.yourSeedPhrase}</h2>
-          <p className="warning">{t.writeItDown}</p>
-
-          <div className="seed-display">
-            {newMnemonic.map((word, i) => (
-              <div key={i} className="seed-word">
-                <span className="word-num">{i + 1}.</span>
-                <span className="word">{word}</span>
-              </div>
-            ))}
-          </div>
-
-          <p className="seed-warning">{t.seedWarning}</p>
-
-          <button className="btn secondary copy-seed-btn" onClick={copySeedPhrase}>
-            {seedCopied ? t.seedCopied : t.copySeed}
-          </button>
-          <button className="btn primary" onClick={startVerification}>
-            {t.iWroteItDown}
-          </button>
-          <button className="btn secondary" onClick={() => setScreen('welcome')}>
-            {t.back}
-          </button>
-        </div>
-      )}
-
-      {/* Verify Seed */}
-      {screen === 'verify' && (
-        <div className="verify-screen">
-          <h2>{t.verifySeed}</h2>
-          <p>{t.enterWord}<strong>{verifyIndices[verifyWordIndex] + 1}</strong></p>
-
-          <div className="verify-progress">
-            {[0, 1, 2].map(i => (
-              <div key={i} className={`verify-dot ${i < verifyWordIndex ? 'done' : i === verifyWordIndex ? 'current' : ''}`} />
-            ))}
-          </div>
-
-          <input
-            type="text"
-            value={verifyInput}
-            onChange={(e) => setVerifyInput(e.target.value)}
-            placeholder={`Word #${verifyIndices[verifyWordIndex] + 1}`}
-            onKeyDown={(e) => e.key === 'Enter' && checkVerifyWord()}
-            autoFocus
-          />
-
-          <button className="btn primary" onClick={checkVerifyWord} disabled={!verifyInput.trim()}>
-            {t.verify}
-          </button>
-          <button className="btn secondary" onClick={() => setScreen('create')}>
-            {t.back}
-          </button>
-        </div>
-      )}
-
-      {/* Import Wallet */}
-      {screen === 'import' && (
-        <div className="import-screen">
-          <h2>{t.enterSeed}</h2>
-          <textarea
-            placeholder={t.seedPlaceholder}
-            value={importInput}
-            onChange={(e) => setImportInput(e.target.value)}
-            rows={4}
-            disabled={isLoading}
-          />
-          <p className="security-note">🔒 {t.securityNote}</p>
-          <button
-            className="btn primary"
-            onClick={() => connectWallet(importInput)}
-            disabled={isLoading || !importInput.trim()}
-          >
-            {isLoading ? t.connecting : t.import}
-          </button>
-          <button className="btn secondary" onClick={() => setScreen('welcome')}>
-            {t.back}
-          </button>
-        </div>
-      )}
-
-      {/* Game Screen */}
-      {screen === 'game' && walletData && (
-        <div className="game-screen">
-          {/* Wallet Info */}
-          <div className="wallet-card">
-            <div className="wallet-status">
-              <span className="status-dot" />
-              <span>{t.connected}</span>
-            </div>
-
-            <div className="wallet-address-section">
-              <p className="label">
-                {t.yourAddress} <span className="version-badge" onClick={() => setShowVersionInfo(!showVersionInfo)}>{t.walletVersion}</span>
-              </p>
-              {showVersionInfo && (
-                <p className="version-info">{t.walletVersionInfo}</p>
-              )}
-              <div className="address-row">
-                <code className="address">{walletData.address}</code>
-                <button className="copy-btn" onClick={copyAddress}>
-                  {copied ? t.copied : t.copyAddress}
-                </button>
-                <button className="copy-btn topup-btn" onClick={() => setShowQR(true)}>
-                  {t.topUp}
-                </button>
-              </div>
-              <p className="deposit-hint">{t.depositHere}</p>
-            </div>
-
-            {/* QR Modal */}
-            {showQR && (
-              <div className="qr-modal-overlay" onClick={() => setShowQR(false)}>
-                <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
-                  <h3>{t.topUp}</h3>
-                  <p className="qr-hint">{t.scanQR}</p>
-                  <div className="qr-container">
-                    <div className="qr-wrapper">
-                      <QRCode
-                        value={`ton://transfer/${walletData.address}`}
-                        size={200}
-                        bgColor="#1a1a2e"
-                        fgColor="#00d4aa"
-                        qrStyle="dots"
-                        eyeRadius={12}
-                        eyeColor="#0098ea"
-                        logoImage="https://ton.lotshot.io/favicon-96x96.png"
-                        logoWidth={50}
-                        logoHeight={50}
-                        logoPadding={5}
-                        logoPaddingStyle="circle"
-                        removeQrCodeBehindLogo={true}
-                        ecLevel="H"
-                      />
-                    </div>
-                  </div>
-                  <div className="qr-address-row">
-                    <code className="qr-address">{walletData.address}</code>
-                    <button className="copy-btn" onClick={copyAddress}>
-                      {copied ? t.copied : t.copyAddress}
-                    </button>
-                  </div>
-                  <button className="btn secondary" onClick={() => setShowQR(false)}>
-                    {t.close}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="wallet-balance-section">
-              <span className="label">{t.balance}:</span>
-              <strong className="balance-value">{walletData.balance} {t.ton}</strong>
-              <button className="refresh-btn" onClick={refreshBalance}>↻</button>
-            </div>
-
-            <button className="disconnect-btn" onClick={disconnectWallet} disabled={isPlaying}>
-              {t.disconnect}
-            </button>
-          </div>
-
-          {/* Lottery Info */}
-          <div className="lottery-card">
-            <div className="info-row">
-              <span>{t.lottery}:</span>
-              <a href="https://ton.lotshot.io/" target="_blank" rel="noopener noreferrer" className="lottery-link">
-                {t.officialSite}
-              </a>
-            </div>
-            <div className="info-row">
-              <span>{t.ticketPrice}:</span>
-              <strong>{TICKET_PRICE} {t.ton}</strong>
-            </div>
-            {lotteryStats && (
-              <>
-                <div className="info-row">
-                  <span>{t.ticketsSold}:</span>
-                  <strong>{lotteryStats.ticketsSold.toLocaleString()}</strong>
-                </div>
-                <div className="info-row">
-                  <span>{t.ticketsToJackpot}:</span>
-                  <strong className="jackpot-value">{lotteryStats.ticketsToJackpot.toLocaleString()}</strong>
-                </div>
-                <div className="prizes-grid">
-                  <div className="prize-label">{t.prizesLeft}:</div>
-                  <div className="prize-item jackpot">
-                    <span className="prize-name">Jackpot</span>
-                    <span className="prize-count">{lotteryStats.prizes.jackpot}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x200</span>
-                    <span className="prize-count">{lotteryStats.prizes.x200}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x77</span>
-                    <span className="prize-count">{lotteryStats.prizes.x77}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x20</span>
-                    <span className="prize-count">{lotteryStats.prizes.x20}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x7</span>
-                    <span className="prize-count">{lotteryStats.prizes.x7}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x3</span>
-                    <span className="prize-count">{lotteryStats.prizes.x3}</span>
-                  </div>
-                  <div className="prize-item">
-                    <span className="prize-name">x1</span>
-                    <span className="prize-count">{lotteryStats.prizes.x1}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Game Settings */}
-          <div className="game-settings">
-            <div className="input-group">
-              <label>{t.budget}</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder={t.budgetPlaceholder}
-                value={budget}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9]/g, '');
-                  setBudget(val);
-                }}
-                onKeyDown={(e) => {
-                  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const text = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
-                  setBudget(text);
-                }}
-                disabled={isPlaying}
-              />
-            </div>
-
-            <div className="input-group">
-              <label>{t.referral}</label>
-              <div className="referral-input-row">
-                <input
-                  type="text"
-                  placeholder={t.referralPlaceholder}
-                  value={referral}
-                  onChange={(e) => {
-                    const val = e.target.value.trim();
-                    setReferral(val);
-                  }}
-                  onBlur={() => {
-                    if (referral.trim()) {
-                      try {
-                        Address.parse(referral.trim());
-                        // Valid address - save to localStorage
-                        localStorage.setItem(REFERRAL_KEY, referral.trim());
-                      } catch {
-                        setReferral('');
-                        localStorage.removeItem(REFERRAL_KEY);
-                        alert(lang === 'ru' ? 'Неверный TON адрес' : 'Invalid TON address');
-                      }
-                    } else {
-                      localStorage.removeItem(REFERRAL_KEY);
-                    }
-                  }}
-                  disabled={isPlaying}
-                  className={referral.trim() && (() => { try { Address.parse(referral.trim()); return true; } catch { return false; } })() ? 'valid' : ''}
-                />
-                {referral && (
-                  <button
-                    type="button"
-                    className="clear-referral-btn"
-                    onClick={() => {
-                      setReferral('');
-                      localStorage.removeItem(REFERRAL_KEY);
-                    }}
-                    disabled={isPlaying}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {budgetNum > 0 && (
-              <div className="estimate">
-                <p>{t.willBuy}: <strong>{totalTickets}</strong> {t.tickets}</p>
-                <p>{t.estimatedCost}: <strong>~{estimatedCost.toFixed(2)}</strong> {t.ton}</p>
-              </div>
-            )}
-
-            <button
-              className={`play-btn ${isPlaying ? 'stop' : ''}`}
-              onClick={() => isPlaying ? (shouldStopRef.current = true) : play()}
-              disabled={!budgetNum || budgetNum <= 0}
-            >
-              {isPlaying ? t.stop : t.play}
-            </button>
-          </div>
-
-          {/* Progress */}
-          {(isPlaying || isDone || logs.length > 0) && (
-            <div className="progress-section">
-              <h3>{isDone ? t.results : t.progress}</h3>
-
-              <div className="stats">
-                <div className="stat success">
-                  <span className="stat-value">{stats.sent}</span>
-                  <span className="stat-label">{t.sent}</span>
-                </div>
-                <div className="stat error">
-                  <span className="stat-value">{stats.failed}</span>
-                  <span className="stat-label">{t.failed}</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">~{(stats.sent * TICKET_PRICE).toFixed(1)}</span>
-                  <span className="stat-label">{t.spent}</span>
-                </div>
-              </div>
-
-              {stats.total > 0 && (
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${((stats.sent + stats.failed) / stats.total) * 100}%` }}
-                  />
-                  <span className="progress-text">{stats.sent + stats.failed}/{stats.total}</span>
-                </div>
-              )}
-
-              {/* Tabs */}
-              <div className="tabs">
-                <button
-                  className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('logs')}
-                >
-                  {t.logsTab}
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'wins' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('wins')}
-                >
-                  {t.winsTab}
-                </button>
-              </div>
-
-              {/* Logs Tab */}
-              {activeTab === 'logs' && (
-                <div className="logs">
-                  {logs.slice(-20).map((log) => (
-                    <div key={log.id} className={`log ${log.status}`}>{log.message}</div>
-                  ))}
-                </div>
-              )}
-
-              {/* Wins Tab */}
-              {activeTab === 'wins' && (
-                <div className="wins-tab">
-                  {gameStartTime > 0 && (
-                    <button className="btn secondary refresh-wins-btn" onClick={() => checkForWins()} disabled={isPlaying}>
-                      ↻ {t.refreshWins}
-                    </button>
-                  )}
-                  {winResults.length > 0 ? (
-                    <>
-                      <div className="wins-summary">
-                        <div className="summary-item">
-                          <div className={`summary-value positive`}>
-                            +{winResults.filter(r => r.isWin).reduce((sum, r) => sum + r.amount, 0).toFixed(2)}
-                          </div>
-                          <div className="summary-label">{t.totalWins}</div>
-                        </div>
-                        <div className="summary-item">
-                          <div className={`summary-value negative`}>
-                            -{(stats.sent * TICKET_PRICE).toFixed(2)}
-                          </div>
-                          <div className="summary-label">{t.totalLoss}</div>
-                        </div>
-                        <div className="summary-item">
-                          <div className={`summary-value ${
-                            winResults.filter(r => r.isWin).reduce((sum, r) => sum + r.amount, 0) - (stats.sent * TICKET_PRICE) >= 0
-                              ? 'positive' : 'negative'
-                          }`}>
-                            {(winResults.filter(r => r.isWin).reduce((sum, r) => sum + r.amount, 0) - (stats.sent * TICKET_PRICE)).toFixed(2)}
-                          </div>
-                          <div className="summary-label">{t.netResult}</div>
-                        </div>
-                      </div>
-                      <div className="wins-list">
-                        {winResults.slice().reverse().map((result) => (
-                          <div key={result.id} className={`win-item ${result.isWin ? 'win' : 'loss'}`}>
-                            <div className="win-info">
-                              <span className={`win-amount ${result.isWin ? 'positive' : 'negative'}`}>
-                                {result.isWin ? `+${result.amount.toFixed(2)}` : `-${TICKET_PRICE}`} TON
-                              </span>
-                              <span className="win-time"> • {result.time}</span>
-                            </div>
-                            <span className={result.isWin ? 'positive' : 'negative'}>
-                              {result.isWin ? t.win : t.loss}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="no-wins">{t.noResults}</div>
-                  )}
-                </div>
-              )}
-
-              {isDone && (
-                <div className={`done-message ${winResults.some(r => r.isWin) ? 'has-wins' : 'no-wins'}`}>
-                  {winResults.some(r => r.isWin) ? t.checkWallet : t.noWinsMessage}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer className="footer">
-        <a href="https://ton.lotshot.io/" target="_blank" rel="noopener noreferrer" className="footer-btn footer-link">
-          {t.officialSite}
-        </a>
-        <span className="footer-divider">•</span>
-        <button className="footer-btn" onClick={() => setShowAbout(true)}>
-          {t.about}
-        </button>
-        <span className="footer-divider">•</span>
-        <button className="footer-btn" onClick={() => setShowFaq(true)}>
-          {t.faq}
-        </button>
-        <span className="footer-divider">•</span>
-        <button className="footer-btn" onClick={() => setShowDonate(true)}>
-          {t.donate}
-        </button>
-      </footer>
-
-      {/* About Modal */}
-      {showAbout && (
-        <div className="modal-overlay" onClick={() => setShowAbout(false)}>
-          <div className="modal about-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{t.about}</h3>
-
-            <div className="about-section">
-              <h4>{t.aboutTitle}</h4>
-              <ul className="about-features">
-                {t.aboutFeatures.map((feature, i) => (
-                  <li key={i}>{feature}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="about-section">
-              <h4>{t.aboutSecurity}</h4>
-              <p className="about-text">{t.aboutSecurityText}</p>
-            </div>
-
-            <div className="modal-badges">
-              <span className="badge">{t.openSource}</span>
-              <span className="badge">{t.mitLicense}</span>
-            </div>
-            <button className="btn secondary" onClick={() => setShowAbout(false)}>
-              {t.close}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FAQ Modal */}
-      {showFaq && (
-        <div className="modal-overlay" onClick={() => setShowFaq(false)}>
-          <div className="modal faq-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{t.faq}</h3>
-            <div className="faq-list">
-              {t.faqItems.map((item, i) => (
-                <div key={i} className="faq-item">
-                  <div className="faq-question">{item.q}</div>
-                  <div className="faq-answer">{item.a}</div>
+            <div className="seed-grid">
+              {newMnemonic.map((word, i) => (
+                <div key={i} className="seed-word">
+                  <span className="word-num">{i + 1}.</span>
+                  <span className="word">{word}</span>
                 </div>
               ))}
             </div>
-            <button className="btn secondary" onClick={() => setShowFaq(false)}>
-              {t.close}
+
+            <p className="warning-red">{t.seedWarning}</p>
+
+            <button className="btn primary" onClick={startVerification}>{t.continue}</button>
+            <button className="btn secondary" onClick={() => setScreen('main')}>{t.back}</button>
+          </>
+        )}
+
+        {/* Verify Screen */}
+        {screen === 'verify' && (
+          <>
+            <h3 className="page-title">{t.verifySeed}</h3>
+            <p style={{ color: 'var(--tg-theme-hint-color)', fontSize: 13 }}>
+              {t.enterWord}<strong>{verifyIndices[verifyWordIndex] + 1}</strong>
+            </p>
+
+            <div className="verify-dots">
+              {[0, 1, 2].map(i => (
+                <div key={i} className={`verify-dot ${i < verifyWordIndex ? 'done' : i === verifyWordIndex ? 'current' : ''}`} />
+              ))}
+            </div>
+
+            <div className="input-group">
+              <input
+                type="text"
+                value={verifyInput}
+                onChange={(e) => setVerifyInput(e.target.value)}
+                placeholder={`Word #${verifyIndices[verifyWordIndex] + 1}`}
+                onKeyDown={(e) => e.key === 'Enter' && checkVerifyWord()}
+                autoFocus
+              />
+            </div>
+
+            <button className="btn primary" onClick={checkVerifyWord} disabled={!verifyInput.trim()}>{t.verify}</button>
+            <button className="btn secondary" onClick={() => setScreen('create')}>{t.back}</button>
+          </>
+        )}
+
+        {/* Import Screen */}
+        {screen === 'import' && (
+          <>
+            <h3 className="page-title">{t.enterSeed}</h3>
+            <textarea
+              className="import-screen"
+              placeholder={t.seedPlaceholder}
+              value={importInput}
+              onChange={(e) => setImportInput(e.target.value)}
+              rows={4}
+              disabled={isLoading}
+            />
+            <p className="security-note">🔒 {t.securityNote}</p>
+            <button className="btn primary" onClick={() => connectWallet(importInput)} disabled={isLoading || !importInput.trim()}>
+              {isLoading ? t.connecting : t.import}
             </button>
-          </div>
-        </div>
+            <button className="btn secondary" onClick={() => setScreen('main')}>{t.back}</button>
+          </>
+        )}
+
+        {/* Main Screens (by tab) */}
+        {screen === 'main' && (
+          <>
+            {/* HOME TAB */}
+            {tab === 'home' && (
+              <>
+                {/* Stats */}
+                {lotteryStats && (
+                  <div className="card">
+                    <div className="stats-card">
+                      <div className="stat-item">
+                        <div className="stat-value">{TICKET_PRICE}</div>
+                        <div className="stat-label">{t.ticketPrice} TON</div>
+                      </div>
+                      <div className="stat-item highlight">
+                        <div className="stat-value">{lotteryStats.ticketsToJackpot.toLocaleString()}</div>
+                        <div className="stat-label">{t.toJackpot}</div>
+                      </div>
+                    </div>
+
+                    {/* Prizes horizontal scroll */}
+                    <div className="prizes-scroll">
+                      <div className="prize-chip jackpot">
+                        <span className="name">Jackpot</span>
+                        <span className="count">{lotteryStats.prizes.jackpot}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x200</span>
+                        <span className="count">{lotteryStats.prizes.x200}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x77</span>
+                        <span className="count">{lotteryStats.prizes.x77}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x20</span>
+                        <span className="count">{lotteryStats.prizes.x20}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x7</span>
+                        <span className="count">{lotteryStats.prizes.x7}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x3</span>
+                        <span className="count">{lotteryStats.prizes.x3}</span>
+                      </div>
+                      <div className="prize-chip">
+                        <span className="name">x1</span>
+                        <span className="count">{lotteryStats.prizes.x1}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Connect Wallet */}
+                {!walletData && (
+                  <div className="card">
+                    <button className="btn primary" onClick={generateWallet} disabled={isLoading}>
+                      {isLoading ? t.generating : t.createWallet}
+                    </button>
+                    <button className="btn secondary" onClick={() => setScreen('import')}>
+                      {t.importWallet}
+                    </button>
+                  </div>
+                )}
+
+                {/* Wallet Connected */}
+                {walletData && (
+                  <div className="card">
+                    <div className="wallet-mini">
+                      <div className="balance">
+                        <div className="balance-value">{walletData.balance} TON</div>
+                        <div className="balance-label">{t.balance}</div>
+                      </div>
+                      <button className="topup-btn" onClick={() => setShowQR(true)}>{t.topUp}</button>
+                    </div>
+
+                    <div className="address-mini">
+                      <code>{walletData.address}</code>
+                      <span className="version">v4R2</span>
+                      <button className="copy-btn-mini" onClick={copyAddress}>
+                        {copied ? '✓' : t.copy}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* PLAY TAB */}
+            {tab === 'play' && walletData && (
+              <>
+                <div className="wallet-mini">
+                  <div className="balance">
+                    <div className="balance-value">{walletData.balance} TON</div>
+                    <div className="balance-label">{t.balance}</div>
+                  </div>
+                  <button className="topup-btn" onClick={refreshBalance}>↻</button>
+                </div>
+
+                <div className="card">
+                  <div className="input-group">
+                    <label>{t.budget}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={t.budgetPlaceholder}
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value.replace(/[^0-9]/g, ''))}
+                      disabled={isPlaying}
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label>{t.referral}</label>
+                    <div className="referral-row">
+                      <input
+                        type="text"
+                        placeholder={t.referralPlaceholder}
+                        value={referral}
+                        onChange={(e) => {
+                          setReferral(e.target.value.trim());
+                          localStorage.setItem(REFERRAL_KEY, e.target.value.trim());
+                        }}
+                        disabled={isPlaying}
+                      />
+                      {referral && (
+                        <button className="clear-btn" onClick={() => { setReferral(''); localStorage.removeItem(REFERRAL_KEY); }}>✕</button>
+                      )}
+                    </div>
+                  </div>
+
+                  {budgetNum > 0 && (
+                    <div className="estimate">
+                      <span>{t.willBuy}: <strong>{totalTickets}</strong></span>
+                      <span>{t.estCost}: <strong>~{estimatedCost.toFixed(1)} TON</strong></span>
+                    </div>
+                  )}
+
+                  <button
+                    className={`play-btn ${isPlaying ? 'stop' : ''}`}
+                    onClick={() => isPlaying ? (shouldStopRef.current = true) : play()}
+                    disabled={!budgetNum || budgetNum <= 0}
+                  >
+                    {isPlaying ? t.stopBtn : t.playBtn}
+                  </button>
+                </div>
+
+                {/* Progress */}
+                {(isPlaying || stats.sent > 0) && (
+                  <div className="card">
+                    <div className="progress-mini">
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${stats.total > 0 ? ((stats.sent + stats.failed) / stats.total) * 100 : 0}%` }} />
+                      </div>
+                      <div className="progress-stats">
+                        <span className="sent">{t.sent}: {stats.sent}</span>
+                        <span className="failed">{t.failed}: {stats.failed}</span>
+                        <span>{stats.sent + stats.failed}/{stats.total}</span>
+                      </div>
+                    </div>
+
+                    <div className="logs-mini">
+                      {logs.slice(-15).map((log) => (
+                        <div key={log.id} className={`log ${log.status}`}>{log.message}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {tab === 'play' && !walletData && (
+              <div className="empty-state">
+                <div className="icon">🔐</div>
+                <p>{t.connectWallet}</p>
+                <button className="btn primary" style={{ marginTop: 16 }} onClick={() => setTab('home')}>
+                  {t.home}
+                </button>
+              </div>
+            )}
+
+            {/* RESULTS TAB */}
+            {tab === 'results' && (
+              <>
+                {winResults.length > 0 ? (
+                  <>
+                    <div className="results-summary">
+                      <div className="result-item">
+                        <div className={`result-value positive`}>+{totalWon.toFixed(2)}</div>
+                        <div className="result-label">{t.won}</div>
+                      </div>
+                      <div className="result-item">
+                        <div className={`result-value negative`}>-{totalSpent.toFixed(2)}</div>
+                        <div className="result-label">{t.lost}</div>
+                      </div>
+                      <div className="result-item">
+                        <div className={`result-value ${netResult >= 0 ? 'positive' : 'negative'}`}>
+                          {netResult >= 0 ? '+' : ''}{netResult.toFixed(2)}
+                        </div>
+                        <div className="result-label">{t.net}</div>
+                      </div>
+                    </div>
+
+                    {gameStartTime > 0 && (
+                      <button className="btn secondary" onClick={() => checkForWins()} disabled={isPlaying} style={{ marginBottom: 12 }}>
+                        ↻ {t.refreshWins}
+                      </button>
+                    )}
+
+                    <div className="wins-list">
+                      {winResults.slice().reverse().map((result) => (
+                        <div key={result.id} className={`win-item ${result.isWin ? 'win' : 'loss'}`}>
+                          <span className={`win-amount ${result.isWin ? 'positive' : 'negative'}`}>
+                            {result.isWin ? `+${result.amount.toFixed(2)}` : `-${TICKET_PRICE}`} TON
+                          </span>
+                          <span className="win-time">{result.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <div className="icon">🎰</div>
+                    <p>{t.noResults}</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* SETTINGS TAB */}
+            {tab === 'settings' && (
+              <>
+                <div className="settings-list">
+                  <div className="settings-item" onClick={() => setLang(lang === 'en' ? 'ru' : 'en')}>
+                    <span className="label">{t.language}</span>
+                    <span className="value">{lang === 'en' ? 'English' : 'Русский'}</span>
+                  </div>
+
+                  <a href="https://ton.lotshot.io/" target="_blank" rel="noopener noreferrer" className="link-item">
+                    <span className="icon">🌐</span>
+                    <div className="text">
+                      <div className="title">{t.officialSite}</div>
+                      <div className="desc">ton.lotshot.io</div>
+                    </div>
+                  </a>
+
+                  <a href="https://github.com/kdev-code/lotshot-autoplay" target="_blank" rel="noopener noreferrer" className="link-item">
+                    <span className="icon">📦</span>
+                    <div className="text">
+                      <div className="title">{t.github}</div>
+                      <div className="desc">Open Source</div>
+                    </div>
+                  </a>
+                </div>
+
+                {walletData && (
+                  <button className="disconnect-btn" onClick={disconnectWallet}>
+                    {t.disconnect}
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Bottom Navigation */}
+      {screen === 'main' && (
+        <nav className="bottom-nav">
+          <button className={`nav-item ${tab === 'home' ? 'active' : ''}`} onClick={() => { setTab('home'); haptic('light'); }}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>{t.home}</span>
+          </button>
+          <button className={`nav-item ${tab === 'play' ? 'active' : ''}`} onClick={() => { setTab('play'); haptic('light'); }}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="10 8 16 12 10 16 10 8"/>
+            </svg>
+            <span>{t.play}</span>
+          </button>
+          <button className={`nav-item ${tab === 'results' ? 'active' : ''}`} onClick={() => { setTab('results'); haptic('light'); }}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>{t.results}</span>
+          </button>
+          <button className={`nav-item ${tab === 'settings' ? 'active' : ''}`} onClick={() => { setTab('settings'); haptic('light'); }}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>{t.settings}</span>
+          </button>
+        </nav>
       )}
 
-      {/* Donate Modal */}
-      {showDonate && (
-        <div className="modal-overlay" onClick={() => setShowDonate(false)}>
-          <div className="modal donate-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{t.donate}</h3>
-            <p className="modal-text">{t.donateText}</p>
-            <div className="donate-qr">
+      {/* QR Modal */}
+      {showQR && walletData && (
+        <div className="modal-overlay" onClick={() => setShowQR(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{t.topUp}</h3>
+            <div className="qr-wrapper">
               <QRCode
-                value={`ton://transfer/${t.donateAddress}`}
+                value={`ton://transfer/${walletData.address}`}
                 size={160}
-                bgColor="#1a1a2e"
-                fgColor="#00d4aa"
-                qrStyle="dots"
-                eyeRadius={10}
-                eyeColor="#0098ea"
+                bgColor="#ffffff"
+                fgColor="#000000"
+                qrStyle="squares"
                 ecLevel="M"
               />
             </div>
-            <div className="donate-address-row">
-              <code className="donate-address">{t.donateAddress}</code>
-              <button className="copy-btn" onClick={copyDonateAddress}>
-                {donateCopied ? t.copied : t.copyAddress}
-              </button>
-            </div>
-            <button className="btn secondary" onClick={() => setShowDonate(false)}>
-              {t.close}
-            </button>
+            <div className="modal-address">{walletData.address}</div>
+            <button className="btn secondary" onClick={() => setShowQR(false)}>Close</button>
           </div>
         </div>
       )}
