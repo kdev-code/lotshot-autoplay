@@ -1218,3 +1218,55 @@ body {
   padding: 6px 10px;
   font-size: 11px;
 }
+
+/* TMA Bottom Navigation */
+.tma-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--tg-theme-secondary-bg-color, #16213e);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 1000;
+}
+
+.tma-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--tg-theme-hint-color, rgba(255, 255, 255, 0.5));
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.tma-nav-item svg {
+  width: 24px;
+  height: 24px;
+}
+
+.tma-nav-item span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tma-nav-item.active {
+  color: var(--tg-theme-button-color, #0098ea);
+}
+
+.tma-nav-item:active {
+  transform: scale(0.95);
+}
+
+/* Add padding to content when nav is shown */
+.telegram-app .wallet-screen {
+  padding-bottom: 80px;
+}
