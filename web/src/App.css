@@ -579,12 +579,24 @@ body {
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.2);
-  color: #fff;
+  background: var(--tg-theme-secondary-bg-color, #1a1a2e) !important;
+  color: var(--tg-theme-text-color, #fff) !important;
   font-size: 15px;
   resize: none;
   font-family: inherit;
   margin-bottom: 8px;
+  min-height: 120px;
+  box-sizing: border-box;
+}
+
+.import-screen textarea::placeholder {
+  color: var(--tg-theme-hint-color, rgba(255, 255, 255, 0.5));
+}
+
+.import-screen textarea:focus {
+  outline: none;
+  border-color: var(--tg-theme-button-color, #0098ea);
+  box-shadow: 0 0 0 2px rgba(0, 152, 234, 0.2);
 }
 
 /* Verify */
