@@ -620,13 +620,8 @@ function App() {
   const seenTxHashesRef = useRef<Set<string>>(new Set());
 
   // Check for wins by looking at incoming transactions from lottery
-  const checkForWins = async (startTime?: number, resetSeen?: boolean) => {
+  const checkForWins = async (startTime?: number, silent?: boolean) => {
     if (!walletData) return;
-
-    // Reset seen hashes when starting a new game
-    if (resetSeen) {
-      seenTxHashesRef.current.clear();
-    }
 
     const filterTime = startTime || gameStartTime;
 
@@ -634,7 +629,7 @@ function App() {
     const WIN_COMMENTS = ['Jackpot', 'x200', 'x77', 'x20', 'x7', 'x3', 'x1'];
 
     try {
-      addLog('pending', t.checkingResults);
+      if (!silent) addLog('pending', t.checkingResults);
 
       // Get transactions from toncenter API
       const response = await fetch(
@@ -700,20 +695,21 @@ function App() {
           }
         }
 
-        if (newWins.length > 0) {
-          addLog('success', `🎉 ${lang === 'ru' ? 'Новых выигрышей' : 'New wins'}: ${newWins.length}`);
-          // Wins already added immediately above
-        } else {
-          addLog('pending', lang === 'ru' ? 'Новых выигрышей не найдено' : 'No new wins found');
-        }
+        if (!silent) {
+          if (newWins.length > 0) {
+            addLog('success', `🎉 ${lang === 'ru' ? 'Новых выигрышей' : 'New wins'}: ${newWins.length}`);
+          } else {
+            addLog('pending', lang === 'ru' ? 'Новых выигрышей не найдено' : 'No new wins found');
+          }
 
-        if (tryAgainCount > 0) {
-          addLog('pending', `${lang === 'ru' ? 'Проигрышей' : 'Losses'}: ${tryAgainCount}`);
+          if (tryAgainCount > 0) {
+            addLog('pending', `${lang === 'ru' ? 'Проигрышей' : 'Losses'}: ${tryAgainCount}`);
+          }
         }
       }
     } catch (e) {
       console.error('Failed to check wins:', e);
-      addLog('error', 'Failed to check results');
+      if (!silent) addLog('error', 'Failed to check results');
     }
   };
 
@@ -775,6 +771,11 @@ function App() {
     }
 
     const lotteryAddr = Address.parse(LOTTERY_ADDRESS);
+
+    // Start periodic win checking during gameplay (silent mode)
+    const winCheckInterval = setInterval(() => {
+      checkForWins(startTime, true);
+    }, 10000); // Check every 10 seconds
 
     for (let i = 1; i <= totalTickets; i++) {
       if (shouldStopRef.current) {
@@ -847,12 +848,15 @@ function App() {
       }
     }
 
+    // Stop periodic win checking
+    clearInterval(winCheckInterval);
+
     await refreshBalance();
     setIsPlaying(false);
     setIsDone(true);
 
-    // Wait a bit for blockchain to process, then check for wins
-    await sleep(5000);
+    // Final check for any remaining wins (silent - toast will show wins)
+    await sleep(3000);
     await checkForWins(startTime, true);
   };
 
@@ -863,7 +867,7 @@ function App() {
   return (
     <div className={`app ${isTelegram ? 'telegram-app' : ''}`}>
       <Toaster
-        position="top-center"
+        position="top-right"
         richColors
         theme="dark"
         toastOptions={{
