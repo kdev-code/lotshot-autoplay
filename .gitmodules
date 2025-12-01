@@ -1,0 +1,4 @@
+[submodule "lotshot-ton-contracts"]
+	path = lotshot-ton-contracts
+	url = https://github.com/lotshot/lotshot-ton-contracts.git
+	branch = TON

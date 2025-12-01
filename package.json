@@ -1,0 +1,22 @@
+{
+  "name": "lotshot-ton-player",
+  "version": "1.0.0",
+  "description": "Automated lottery player for Lotshot TON",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npx ts-node src/index.ts",
+    "play": "npx ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@ton/ton": "^15.2.1",
+    "@ton/core": "^0.62.0",
+    "@ton/crypto": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  },
+  "private": true
+}
