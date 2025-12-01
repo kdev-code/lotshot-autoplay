@@ -1028,17 +1028,20 @@ function App() {
         <div className="modal-overlay" onClick={() => setShowQR(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{t.topUp}</h3>
-            <div className="qr-wrapper">
-              <QRCode
-                value={`ton://transfer/${walletData.address}`}
-                size={160}
-                bgColor="#ffffff"
-                fgColor="#000000"
-                qrStyle="squares"
-                ecLevel="M"
-              />
+            <div className="qr-container">
+              <div className="qr-wrapper">
+                <QRCode
+                  value={`ton://transfer/${walletData.address}`}
+                  size={180}
+                  bgColor="#1a1a2e"
+                  fgColor="#ffffff"
+                  qrStyle="squares"
+                  ecLevel="M"
+                />
+              </div>
             </div>
             <div className="modal-address">{walletData.address}</div>
+            <button className="btn primary" onClick={copyAddress}>{copied ? '✓ Copied' : t.copy}</button>
             <button className="btn secondary" onClick={() => setShowQR(false)}>Close</button>
           </div>
         </div>

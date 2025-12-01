@@ -714,16 +714,31 @@ body {
 }
 
 .modal h3 {
-  font-size: 22px;
+  font-size: 24px;
+  font-weight: 700;
   margin-bottom: 20px;
+  background: linear-gradient(135deg, #0098ea, #00d4aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.qr-container {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 3px;
+  background: linear-gradient(135deg, #0098ea, #00d4aa, #0098ea);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 152, 234, 0.3);
 }
 
 .qr-wrapper {
-  display: inline-block;
+  background: #1a1a2e;
   padding: 16px;
-  background: #fff;
-  border-radius: 16px;
-  margin-bottom: 16px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-address {
