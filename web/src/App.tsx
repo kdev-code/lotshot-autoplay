@@ -126,7 +126,7 @@ const translations = {
       },
       {
         q: 'What are the odds?',
-        a: 'Jackpot x1000 (0.008%), Gold x200 (0.025%), Platinum x77 (0.08%), Silver x20 (0.4%), Bronze x7 (1.25%), Copper x3 (2.5%), Base x1 (10%).',
+        a: 'Jackpot x1000 (0.008%), Major x200 (0.025%), High x77 (0.08%), Mid x20 (0.4%), Low-Mid x7 (1.25%), Low x3 (2.5%), Mini x1 (10%).',
       },
       {
         q: 'Is it safe?',
@@ -256,7 +256,7 @@ const translations = {
       },
       {
         q: 'Какие шансы на выигрыш?',
-        a: 'Джекпот x1000 (0.008%), Золото x200 (0.025%), Платина x77 (0.08%), Серебро x20 (0.4%), Бронза x7 (1.25%), Медь x3 (2.5%), База x1 (10%).',
+        a: 'Jackpot x1000 (0.008%), Major x200 (0.025%), High x77 (0.08%), Mid x20 (0.4%), Low-Mid x7 (1.25%), Low x3 (2.5%), Mini x1 (10%).',
       },
       {
         q: 'Это безопасно?',
